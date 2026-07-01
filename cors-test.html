@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test - Hotel Management App</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>CORS Test - Amirable Hotel Management App</h1>
+    
+    <h2>Server Status</h2>
+    <div id="status">
+        <p>Frontend: <span id="frontendStatus">Checking...</span></p>
+        <p>Backend: <span id="backendStatus">Checking...</span></p>
+        <p>CORS Test: <span id="corsStatus">Pending...</span></p>
+    </div>
+    
+    <h2>Test Backend API</h2>
+    <button onclick="testHealthEndpoint()">Test /api/v1/health</button>
+    <button onclick="testRootEndpoint()">Test / (root)</button>
+    <button onclick="testDirectBackend()">Test Direct Backend (Port 8000)</button>
+    
+    <h2>Test Frontend Proxy</h2>
+    <button onclick="testFrontendProxy()">Test /api Proxy (Port 5173)</button>
+    
+    <h2>Results</h2>
+    <pre id="result"></pre>
+    
+    <h2>CORS Headers Check</h2>
+    <pre id="corsHeaders"></pre>
+    
+    <script>
+        function updateStatus(elementId, status, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.textContent = status;
+            element.className = isSuccess ? 'success' : 'error';
+        }
+        
+        function logResult(text) {
+            document.getElementById('result').textContent = text;
+        }
+        
+        function logCorsHeaders(headers) {
+            const corsHeaders = {};
+            for (const [key, value] of headers.entries()) {
+                if (key.toLowerCase().includes('access-control') || 
+                    key.toLowerCase().includes('allow') ||
+                    key.toLowerCase().includes('origin')) {
+                    corsHeaders[key] = value;
+                }
+            }
+            document.getElementById('corsHeaders').textContent = JSON.stringify(corsHeaders, null, 2);
+        }
+        
+        // Check frontend status
+        fetch('http://localhost:5173')
+            .then(() => updateStatus('frontendStatus', 'Running (Port 5173)', true))
+            .catch(() => updateStatus('frontendStatus', 'Not Running', false));
+        
+        // Check backend status
+        fetch('http://localhost:8000')
+            .then(() => updateStatus('backendStatus', 'Running (Port 8000)', true))
+            .catch(() => updateStatus('backendStatus', 'Not Running', false));
+        
+        function testHealthEndpoint() {
+            logResult('Testing /api/v1/health endpoint...');
+            fetch('http://localhost:8000/api/v1/health')
+                .then(response => {
+                    logCorsHeaders(response.headers);
+                    if (response.ok) {
+                        return response.json().then(data => {
+                            updateStatus('corsStatus', 'CORS Working!', true);
+                            logResult(JSON.stringify(data, null, 2));
+                        });
+                    } else {
+                        updateStatus('corsStatus', 'HTTP Error', false);
+                        logResult(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                })
+                .catch(error => {
+                    updateStatus('corsStatus', 'CORS Failed', false);
+                    logResult(`Error: ${error.message}`);
+                });
+        }
+        
+        function testRootEndpoint() {
+            logResult('Testing root endpoint...');
+            fetch('http://localhost:8000/')
+                .then(response => {
+                    logCorsHeaders(response.headers);
+                    if (response.ok) {
+                        return response.json().then(data => {
+                            logResult(JSON.stringify(data, null, 2));
+                        });
+                    }
+                })
+                .catch(error => {
+                    logResult(`Error: ${error.message}`);
+                });
+        }
+        
+        function testDirectBackend() {
+            logResult('Testing direct backend with credentials...');
+            fetch('http://localhost:8000/api/v1/health', {
+                method: 'GET',
+                credentials: 'include',  // This will test CORS with credentials
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Test-Header': 'test-value'  // Test custom headers
+                }
+            })
+            .then(response => {
+                logCorsHeaders(response.headers);
+                logResult(`Status: ${response.status}\nHeaders checked above\n\nResponse will come if CORS allows...`);
+                return response.json();
+            })
+            .then(data => {
+                logResult(JSON.stringify(data, null, 2));
+            })
+            .catch(error => {
+                logResult(`Error: ${error.message}\n\nThis might be a CORS issue if backend is running.`);
+            });
+        }
+        
+        function testFrontendProxy() {
+            logResult('Testing frontend proxy /api -> backend...');
+            fetch('http://localhost:5173/api/health')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => {
+                            logResult(`Proxy Working!\n\n${JSON.stringify(data, null, 2)}`);
+                        });
+                    } else {
+                        logResult(`Proxy Error: HTTP ${response.status}`);
+                    }
+                })
+                .catch(error => {
+                    logResult(`Proxy Error: ${error.message}\n\nMake sure Vite proxy is configured in vite.config.ts`);
+                });
+        }
+    </script>
+</body>
+</html>

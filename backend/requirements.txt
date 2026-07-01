@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy[asyncio]
+aiosqlite
+pyjwt[crypto]
+passlib[bcrypt]
+pydantic-settings
+python-multipart
+python-dotenv
+jinja2
+pdfkit

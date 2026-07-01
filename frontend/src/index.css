@@ -1,0 +1,83 @@
+/**
+ * Developer: DroneBug Technologies
+ * GitHub: https://github.com/ABugDrone
+ * App: Amirable Hotel Management System
+ * License: Proprietary
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg-base text-text-primary font-sans antialiased overflow-hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-base;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full hover:bg-text-muted transition-colors;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none min-h-[44px] flex items-center justify-center;
+  }
+  
+  .input-base {
+    @apply bg-bg-elevated border border-border text-text-primary rounded px-4 py-2 focus:outline-none focus:border-accent-primary transition-colors min-h-[44px] w-full;
+  }
+
+  .card-surface {
+    @apply bg-bg-surface border border-border rounded-lg p-6;
+  }
+}
+
+/* ===== LIGHT THEME OVERRIDES ===== */
+.theme-light .bg-bg-base { background-color: #F3F4F6; }
+.theme-light .bg-bg-surface { background-color: #FFFFFF; }
+.theme-light .bg-bg-elevated { background-color: #F9FAFB; }
+.theme-light .border-border { border-color: #E5E7EB; }
+.theme-light .text-text-primary { color: #111827; }
+.theme-light .text-text-muted { color: #6B7280; }
+.theme-light .text-accent-primary { color: #4F7FFF; }
+.theme-light .text-accent-warm { color: #D97706; }
+.theme-light .text-status-green { color: #16A34A; }
+.theme-light .text-status-red { color: #DC2626; }
+.theme-light .text-status-yellow { color: #CA8A04; }
+.theme-light .text-status-gray { color: #9CA3AF; }
+.theme-light .bg-status-green { background-color: #16A34A; }
+.theme-light .bg-status-red { background-color: #DC2626; }
+.theme-light .bg-status-yellow { background-color: #CA8A04; }
+.theme-light .bg-status-gray { background-color: #9CA3AF; }
+.theme-light .bg-accent-primary { background-color: #4F7FFF; }
+.theme-light .bg-border { background-color: #E5E7EB; }
+.theme-light .bg-text-muted { background-color: #6B7280; }
+.theme-light .divide-border > * + * { border-color: #E5E7EB; }
+.theme-light .border-accent-primary { border-color: #4F7FFF; }
+.theme-light .border-status-green { border-color: #16A34A; }
+.theme-light .border-status-red { border-color: #DC2626; }
+
+.theme-light .hover\:bg-bg-elevated:hover { background-color: #F9FAFB; }
+.theme-light .hover\:text-text-primary:hover { color: #111827; }
+.theme-light .hover\:text-accent-primary:hover { color: #4F7FFF; }
+.theme-light .hover\:border-accent-primary:hover { border-color: #4F7FFF; }
+.theme-light .hover\:border-text-muted:hover { border-color: #6B7280; }
+.theme-light .hover\:bg-status-green:hover { background-color: #16A34A; }
+.theme-light .hover\:bg-status-red:hover { background-color: #DC2626; }
+.theme-light .hover\:bg-opacity-10:hover { --tw-bg-opacity: 0.1; }
+.theme-light .hover\:bg-opacity-90:hover { --tw-bg-opacity: 0.9; }
+
+.theme-light .group:hover .group-hover\:text-accent-primary { color: #4F7FFF; }
+
+.theme-light .btn-primary { background-color: #4F7FFF; }
+.theme-light .input-base { background-color: #F9FAFB; border-color: #E5E7EB; color: #111827; }
+.theme-light .input-base:focus { border-color: #4F7FFF; }
+.theme-light .card-surface { background-color: #FFFFFF; border-color: #E5E7EB; }
