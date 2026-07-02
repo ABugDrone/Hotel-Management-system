@@ -2,10 +2,8 @@ fastapi
 uvicorn
 sqlalchemy[asyncio]
 aiosqlite
-pyjwt[crypto]
-passlib[bcrypt]
-pydantic-settings
+PyJWT[crypto]
+bcrypt
 python-multipart
-python-dotenv
-jinja2
-pdfkit
+pydantic
+pywebview

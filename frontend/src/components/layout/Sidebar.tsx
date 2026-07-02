@@ -26,7 +26,7 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
 );
 
 export const Sidebar = () => {
-  const { logout, user } = useAuthStore();
+  const { logout } = useAuthStore();
 
   const menuItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },

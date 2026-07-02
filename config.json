@@ -1,1 +1,1 @@
-{ "db_path": "C:/AmirableHotel/data/amirable.db", "api_base_url": "http://localhost:8000", "app_version": "1.0.0", "developer": "DroneBug Technologies" }
+{ "db_path": "C:/AmirableHotel/data/amirable.db", "api_base_url": "http://192.168.1.66:8000", "app_version": "1.0.0", "developer": "DroneBug Technologies" }

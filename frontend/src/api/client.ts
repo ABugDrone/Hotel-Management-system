@@ -6,7 +6,7 @@
  */
 
 import axios from "axios";
-import { getApiBaseUrl } from "../config";
+
 
 const client = axios.create({
   timeout: 15000,

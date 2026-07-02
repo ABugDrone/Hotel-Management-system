@@ -5,3 +5,18 @@ backend/__pycache__/
 *.pyc
 .env
 .DS_Store
+.vscode/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend/vite-err.txt
+frontend/vite-out.txt
+frontend/public/config.json
+
+# PyInstaller build artifacts
+build/
+dist/
+
+# Large build archives
+*.rar
+*.zip

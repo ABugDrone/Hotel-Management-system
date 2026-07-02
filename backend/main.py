@@ -91,15 +91,14 @@ app.include_router(reports_router, prefix="/api/v1")
 app.include_router(backup_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 
-@app.get("/")
-async def root():
-    return {"message": "Amirable Hotel Management API is running", "developer": "DroneBug Technologies"}
-
 @app.get("/health")
 async def health():
     return {"status": "OK", "message": "Hotel Management API is healthy", "timestamp": "2024-01-01T00:00:00Z"}
 
-# Serve static files from frontend/dist if it exists (for sidecar/production)
-frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+# Serve static files from frontend/dist if it exists (for sidecar/production/pyinstaller)
+base_dir = os.environ.get("AMIRABLE_BASE_DIR")
+if not base_dir:
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+frontend_dist = os.path.join(base_dir, "frontend", "dist")
 if os.path.exists(frontend_dist):
     app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="static")

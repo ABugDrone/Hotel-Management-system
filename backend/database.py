@@ -11,9 +11,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import event
 
-# Load config from root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+# Load config from root (or _MEIPASS when bundled with PyInstaller)
+base_dir = os.environ.get("AMIRABLE_BASE_DIR")
+if not base_dir:
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+CONFIG_PATH = os.path.join(base_dir, "config.json")
 
 with open(CONFIG_PATH, "r") as f:
     config = json.load(f)
