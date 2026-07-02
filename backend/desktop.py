@@ -39,10 +39,10 @@ class UvicornThread(threading.Thread):
             self.server.should_exit = True
 
 
-def wait_for_server(url, timeout=15):
-    for _ in range(timeout):
+def wait_for_server(url, timeout=60):
+    for i in range(timeout):
         try:
-            urllib.request.urlopen(url, timeout=1)
+            urllib.request.urlopen(url, timeout=2)
             return True
         except Exception:
             time.sleep(1)
