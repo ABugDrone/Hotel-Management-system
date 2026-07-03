@@ -39,7 +39,10 @@ class Payment(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     ledger_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    assignment_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    guest_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     method: Mapped[PaymentMethod] = mapped_column(Enum(PaymentMethod), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=True)
     recorded_by: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

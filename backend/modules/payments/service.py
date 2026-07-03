@@ -33,8 +33,11 @@ async def create_payment(db: AsyncSession, payment_data: PaymentCreate, user_id:
     # Create payment record
     payment = Payment(
         ledger_id=ledger_entry.id,
+        assignment_id=payment_data.assignment_id,
+        guest_id=payment_data.guest_id,
         method=payment_data.method,
         amount=payment_data.amount,
+        description=payment_data.description,
         recorded_by=user_id
     )
     db.add(payment)

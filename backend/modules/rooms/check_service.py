@@ -116,8 +116,11 @@ async def check_out(db: AsyncSession, user_id: str, data: CheckOutRequest, reque
         
         payment_record = Payment(
             ledger_id=ledger_payment.id,
+            assignment_id=assignment.id,
+            guest_id=assignment.guest_id,
             method=data.payment_method,
             amount=data.amount_paid,
+            description="Final Check-out Payment",
             recorded_by=user_id
         )
         db.add(payment_record)
