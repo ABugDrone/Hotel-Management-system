@@ -1,9 +1,7 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy[asyncio]
 aiosqlite
-PyJWT[crypto]
-bcrypt
 python-multipart
 pydantic
 pywebview

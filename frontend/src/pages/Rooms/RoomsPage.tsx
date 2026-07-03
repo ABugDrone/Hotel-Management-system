@@ -13,7 +13,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import client from '../../api/client';
 import { Room, RoomStatus } from '../../types';
-import { useAuthStore } from '../../store/auth';
 
 const roomSchema = z.object({
   number: z.string().min(1, 'Room number is required'),
@@ -29,7 +28,6 @@ export const RoomsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
 
   const { data: rooms, isLoading } = useQuery<Room[]>({
     queryKey: ['rooms'],
@@ -113,12 +111,10 @@ export const RoomsPage = () => {
           </h2>
           <p className="text-text-muted mt-1">Manage hotel inventory and status</p>
         </div>
-        {(user?.role === 'super_admin' || user?.role === 'manager') && (
           <button onClick={() => handleOpenModal()} className="btn-primary">
             <Plus size={20} className="mr-2" />
             Add New Room
           </button>
-        )}
       </div>
 
       <div className="card-surface overflow-hidden">
@@ -159,27 +155,21 @@ export const RoomsPage = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {(user?.role === 'super_admin' || user?.role === 'manager') && (
-                          <>
-                            <button 
-                              onClick={() => handleOpenModal(room)}
-                              className="p-2 text-text-muted hover:text-accent-primary transition-colors"
-                              title="Edit Room"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            {user?.role === 'super_admin' && (
-                              <button 
-                                onClick={() => { if(confirm('Delete room?')) deleteMutation.mutate(room.id) }}
-                                className="p-2 text-text-muted hover:text-status-red transition-colors"
-                                title="Delete Room"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                          <button 
+                            onClick={() => handleOpenModal(room)}
+                            className="p-2 text-text-muted hover:text-accent-primary transition-colors"
+                            title="Edit Room"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button 
+                            onClick={() => { if(confirm('Delete room?')) deleteMutation.mutate(room.id) }}
+                            className="p-2 text-text-muted hover:text-status-red transition-colors"
+                            title="Delete Room"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                     </td>
                   </tr>
                 ))

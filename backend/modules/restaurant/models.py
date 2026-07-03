@@ -9,7 +9,7 @@ import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import String, Float, DateTime, Enum, Boolean, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.database import Base
 
 class FoodCategory(str, enum.Enum):
@@ -49,6 +49,8 @@ class FoodOrder(Base):
     notes: Mapped[str] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    items = relationship("FoodOrderItem", backref="order", lazy="selectin")
 
 class FoodOrderItem(Base):
     __tablename__ = "food_order_items"

@@ -10,8 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import datetime
 from backend.database import get_db
-from backend.auth.dependencies import require_role
-from backend.auth.models import UserRole
 from . import service, schemas
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
@@ -20,8 +18,7 @@ router = APIRouter(prefix="/attendance", tags=["attendance"])
 async def list_attendance(
     date: Optional[str] = None,
     status: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     date_filter = None
     if date:
@@ -34,7 +31,6 @@ async def list_attendance(
 @router.post("/", response_model=schemas.AttendanceRead, status_code=status.HTTP_201_CREATED)
 async def create_attendance(
     data: schemas.AttendanceCreate,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.create_attendance(db, data)

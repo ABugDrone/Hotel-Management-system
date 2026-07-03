@@ -1,13 +1,27 @@
-import asyncio
-import threading
-import time
 import sys
 import os
+import threading
+import time
+import asyncio
 import urllib.request
+import ctypes
 import uvicorn
 from uvicorn.config import Config
 from uvicorn.server import Server
 import webview
+
+
+def _msgbox(title, message, icon=0x10):
+    ctypes.windll.user32.MessageBoxW(0, message, title, icon)
+
+
+def _global_exc_hook(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    _msgbox("Amirable Error", f"An unexpected error occurred.\n\n{exc_type.__name__}: {exc_value}")
+
+sys.excepthook = _global_exc_hook
 
 
 class UvicornThread(threading.Thread):
@@ -26,6 +40,7 @@ class UvicornThread(threading.Thread):
                 host=self.host,
                 port=self.port,
                 log_level="warning",
+                loop="asyncio",
             )
             self.server = Server(config)
             self.ready.set()
@@ -40,7 +55,7 @@ class UvicornThread(threading.Thread):
 
 
 def wait_for_server(url, timeout=60):
-    for i in range(timeout):
+    for _ in range(timeout):
         try:
             urllib.request.urlopen(url, timeout=2)
             return True
@@ -67,35 +82,29 @@ if __name__ == "__main__":
     server_thread.ready.wait()
 
     if server_thread.error:
-        import ctypes
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Failed to start server:\n{server_thread.error}",
-            "Amirable Error", 0x10
-        )
+        _msgbox("Amirable Error", f"Failed to start server:\n{server_thread.error}")
         sys.exit(1)
 
     if not wait_for_server("http://127.0.0.1:8000/health"):
-        import ctypes
-        ctypes.windll.user32.MessageBoxW(
-            0, "Server did not become ready in time.",
-            "Amirable Error", 0x10
-        )
+        _msgbox("Amirable Error", "Server did not become ready within 60 seconds.\nThis may indicate a port conflict or slow hardware.")
         sys.exit(1)
 
-    webview.create_window(
-        "Amirable Hotel Management",
-        "http://127.0.0.1:8000",
-        width=1280,
-        height=800,
-        resizable=True,
-        min_size=(900, 600),
-    )
-
-    webview.start(
-        gui="edgechromium",
-        debug=False,
-        icon=get_icon(),
-        private_mode=False,
-    )
-
-    server_thread.stop()
+    try:
+        webview.create_window(
+            "Amirable Hotel Management",
+            "http://127.0.0.1:8000",
+            width=1280,
+            height=800,
+            resizable=True,
+            min_size=(900, 600),
+        )
+        webview.start(
+            gui="edgechromium",
+            debug=False,
+            icon=get_icon(),
+            private_mode=False,
+        )
+    except Exception as e:
+        _msgbox("Amirable Error", f"Application window error:\n{e}")
+    finally:
+        server_thread.stop()

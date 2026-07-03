@@ -9,8 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from backend.database import get_db
-from backend.auth.dependencies import require_role
-from backend.auth.models import UserRole
 from . import service, schemas
 
 router = APIRouter(prefix="/staff", tags=["staff"])
@@ -19,24 +17,21 @@ router = APIRouter(prefix="/staff", tags=["staff"])
 async def list_staff(
     department: Optional[str] = None,
     status: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.get_all_staff(db, department=department, status=status)
 
 @router.post("/", response_model=schemas.StaffRead, status_code=status.HTTP_201_CREATED)
 async def create_staff(
     data: schemas.StaffCreate,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.create_staff(db, data)
 
 @router.get("/{staff_id}", response_model=schemas.StaffRead)
 async def get_staff(
     staff_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     staff = await service.get_staff_by_id(db, staff_id)
     if not staff:
@@ -47,8 +42,7 @@ async def get_staff(
 async def update_staff(
     staff_id: str,
     data: schemas.StaffCreate,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     staff = await service.get_staff_by_id(db, staff_id)
     if not staff:
@@ -58,8 +52,7 @@ async def update_staff(
 @router.delete("/{staff_id}")
 async def delete_staff(
     staff_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN]))
+    db: AsyncSession = Depends(get_db)
 ):
     staff = await service.get_staff_by_id(db, staff_id)
     if not staff:

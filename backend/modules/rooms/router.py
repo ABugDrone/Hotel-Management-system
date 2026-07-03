@@ -11,8 +11,6 @@ from sqlalchemy import select, func
 from datetime import datetime
 from typing import List, Optional
 from backend.database import get_db
-from backend.auth.dependencies import require_role, get_current_user
-from backend.auth.models import User, UserRole
 from backend.modules.rooms import service, schemas, check_schemas, check_service
 from backend.modules.rooms.models import Room, RoomStatus, RoomAssignment
 
@@ -21,16 +19,14 @@ router = APIRouter(prefix="/rooms", tags=["rooms"])
 @router.get("/", response_model=List[schemas.RoomRead])
 async def list_rooms(
     status: Optional[RoomStatus] = None, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.HOUSEKEEPING]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.get_all_rooms(db, status=status)
 
 @router.post("/", response_model=schemas.RoomRead, status_code=status.HTTP_201_CREATED)
 async def create_room(
     room: schemas.RoomCreate, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     existing = await service.get_room_by_number(db, room.number)
     if existing:
@@ -40,8 +36,7 @@ async def create_room(
 @router.get("/{room_id}", response_model=schemas.RoomRead)
 async def get_room(
     room_id: str, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST]))
+    db: AsyncSession = Depends(get_db)
 ):
     room = await service.get_room_by_id(db, room_id)
     if not room:
@@ -52,8 +47,7 @@ async def get_room(
 async def update_room(
     room_id: str, 
     room_data: schemas.RoomUpdate, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     room = await service.get_room_by_id(db, room_id)
     if not room:
@@ -63,8 +57,7 @@ async def update_room(
 @router.delete("/{room_id}")
 async def delete_room(
     room_id: str, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN]))
+    db: AsyncSession = Depends(get_db)
 ):
     room = await service.get_room_by_id(db, room_id)
     if not room:
@@ -76,8 +69,7 @@ async def delete_room(
 async def update_status(
     room_id: str, 
     status: RoomStatus, 
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.HOUSEKEEPING]))
+    db: AsyncSession = Depends(get_db)
 ):
     room = await service.get_room_by_id(db, room_id)
     if not room:
@@ -89,31 +81,21 @@ async def update_status(
 async def room_check_in(
     data: check_schemas.CheckInRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db)
 ):
-    # Only Receptionist, Manager, Super Admin can check in
-    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    return await check_service.check_in(db, current_user.id, data, request)
+    return await check_service.check_in(db, "system", data, request)
 
 @router.post("/check-out")
 async def room_check_out(
     data: check_schemas.CheckOutRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-        
-    return await check_service.check_out(db, current_user.id, data, request)
+    return await check_service.check_out(db, "system", data, request)
 
 @router.get("/assignments/active", response_model=List[check_schemas.StaySummary])
 async def get_active_assignments(
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST]))
+    db: AsyncSession = Depends(get_db)
 ):
     # This is a bit complex for a single query, but I'll implement a basic version
     from backend.modules.guests.models import Guest
@@ -139,10 +121,37 @@ async def get_active_assignments(
         ))
     return stays
 
+@router.get("/assignments/guest/{guest_id}", response_model=List[check_schemas.StaySummary])
+async def get_assignments_by_guest(
+    guest_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    from backend.modules.guests.models import Guest
+    from backend.modules.rooms.models import RoomAssignment, Room
+    
+    query = select(RoomAssignment, Guest.full_name, Room.number).join(
+        Guest, RoomAssignment.guest_id == Guest.id
+    ).join(
+        Room, RoomAssignment.room_id == Room.id
+    ).where(RoomAssignment.guest_id == guest_id)
+    
+    result = await db.execute(query)
+    stays = []
+    for row in result:
+        assignment, guest_name, room_number = row
+        balance = await check_service.calculate_balance(db, assignment.id)
+        stays.append(check_schemas.StaySummary(
+            assignment_id=assignment.id,
+            guest_name=guest_name,
+            room_number=room_number,
+            check_in_date=assignment.check_in_date,
+            balance=balance
+        ))
+    return stays
+
 @router.get("/stats/summary")
 async def get_dashboard_summary(
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST]))
+    db: AsyncSession = Depends(get_db)
 ):
     from backend.modules.payments.models import GuestLedger, LedgerEntryType
     

@@ -9,8 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from backend.database import get_db
-from backend.auth.dependencies import require_role, get_current_user
-from backend.auth.models import User, UserRole
 from . import service, schemas
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -19,16 +17,14 @@ router = APIRouter(prefix="/inventory", tags=["inventory"])
 async def list_items(
     category: Optional[str] = None,
     low_stock: bool = False,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.KITCHEN, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.get_all_items(db, category=category, low_stock=low_stock)
 
 @router.post("/items", response_model=schemas.InventoryItemRead, status_code=status.HTTP_201_CREATED)
 async def create_item(
     data: schemas.InventoryItemCreate,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.KITCHEN]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.create_item(db, data)
 
@@ -36,8 +32,7 @@ async def create_item(
 async def update_item(
     item_id: str,
     data: schemas.InventoryItemCreate,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER]))
+    db: AsyncSession = Depends(get_db)
 ):
     item = await service.get_item_by_id(db, item_id)
     if not item:
@@ -47,8 +42,7 @@ async def update_item(
 @router.delete("/items/{item_id}")
 async def delete_item(
     item_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN]))
+    db: AsyncSession = Depends(get_db)
 ):
     item = await service.get_item_by_id(db, item_id)
     if not item:
@@ -58,20 +52,16 @@ async def delete_item(
 
 @router.get("/transactions", response_model=List[schemas.TransactionRead])
 async def list_transactions(
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.KITCHEN]))
+    db: AsyncSession = Depends(get_db)
 ):
     return await service.get_all_transactions(db)
 
 @router.post("/transactions", response_model=schemas.TransactionRead, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     data: schemas.TransactionCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.KITCHEN]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    transaction = await service.create_transaction(db, data, current_user.id)
+    transaction = await service.create_transaction(db, data, "system")
     if not transaction:
         raise HTTPException(status_code=404, detail="Item not found")
     return transaction

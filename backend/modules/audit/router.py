@@ -11,10 +11,7 @@ from sqlalchemy import select, func
 from typing import List, Optional
 from datetime import datetime
 from backend.database import get_db
-from backend.auth.dependencies import require_role
-from backend.auth.models import UserRole
 from backend.modules.audit.models import AuditLog
-from backend.auth.models import User
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -26,8 +23,7 @@ async def list_audit_logs(
     end_date: Optional[str] = None,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN]))
+    db: AsyncSession = Depends(get_db)
 ):
     query = select(AuditLog).order_by(AuditLog.created_at.desc())
     if action:
@@ -52,8 +48,6 @@ async def list_audit_logs(
 
     logs_with_users = []
     for log in logs:
-        user_result = await db.execute(select(User).where(User.id == log.user_id))
-        user = user_result.scalar_one_or_none()
         logs_with_users.append({
             "id": log.id,
             "user_id": log.user_id,
@@ -63,12 +57,7 @@ async def list_audit_logs(
             "details": log.details,
             "ip_address": log.ip_address,
             "user_agent": log.user_agent if hasattr(log, 'user_agent') else None,
-            "created_at": log.created_at.isoformat() if log.created_at else None,
-            "user": {
-                "username": user.username if user else "Unknown",
-                "full_name": user.full_name if user else "Unknown",
-                "role": user.role.value if user else "unknown"
-            } if user else None
+            "created_at": log.created_at.isoformat() if log.created_at else None
         })
 
     return logs_with_users

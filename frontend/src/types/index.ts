@@ -5,15 +5,6 @@
  * License: Proprietary
  */
 
-export type UserRole = 'super_admin' | 'manager' | 'receptionist' | 'housekeeping' | 'kitchen' | 'accountant';
-
-export interface User {
-  id: string;
-  username: string;
-  full_name: string;
-  role: UserRole;
-}
-
 export type RoomStatus = 'available' | 'occupied' | 'dirty' | 'maintenance' | 'reserved';
 
 export interface Room {

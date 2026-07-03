@@ -5,9 +5,8 @@
  * License: Proprietary
  */
 
-import { LayoutDashboard, BedDouble, Users, CreditCard, Utensils, Package, ScrollText, UserCog, ClipboardCheck, Wallet, FileBarChart, ShieldAlert, DatabaseBackup, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, BedDouble, Users, CreditCard, Utensils, Package, ScrollText, UserCog, ClipboardCheck, Wallet, FileBarChart, ShieldAlert, DatabaseBackup, Settings } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { useAuthStore } from '../../store/auth';
 
 const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => (
   <NavLink
@@ -26,8 +25,6 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
 );
 
 export const Sidebar = () => {
-  const { logout } = useAuthStore();
-
   const menuItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/rooms', icon: BedDouble, label: 'Rooms' },
@@ -59,13 +56,6 @@ export const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-border mt-auto">
-        <button 
-          onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-status-red hover:bg-bg-elevated w-full rounded transition-colors"
-        >
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
         <div className="mt-4 px-4">
           <p className="text-[10px] text-text-muted">v1.0.0</p>
           <p className="text-[10px] text-text-muted">DroneBug Technologies</p>

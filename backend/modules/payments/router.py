@@ -5,38 +5,42 @@ App: Amirable Hotel Management System
 License: Proprietary
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import datetime
 
 from backend.database import get_db
-from backend.auth.dependencies import require_role, get_current_user
-from backend.auth.models import User, UserRole
 from . import service, schemas
 from .models import PaymentMethod, LedgerEntryType
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
+@router.post("/charge", status_code=status.HTTP_201_CREATED)
+async def add_charge(
+    charge: schemas.AdditionalChargeCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    from backend.modules.payments.models import GuestLedger
+    ledger = GuestLedger(
+        assignment_id=charge.assignment_id,
+        guest_id=charge.guest_id,
+        entry_type=LedgerEntryType.CHARGE,
+        description=charge.description,
+        amount=charge.amount
+    )
+    db.add(ledger)
+    await db.commit()
+    await db.refresh(ledger)
+    return ledger
+
 @router.post("/", response_model=schemas.PaymentRead, status_code=status.HTTP_201_CREATED)
 async def create_payment(
     payment: schemas.PaymentCreate,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Create a new payment record.
-    Requires: SUPER_ADMIN, MANAGER, RECEPTIONIST, ACCOUNTANT
-    """
-    if current_user.role not in [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to record payments"
-        )
-    
     try:
-        return await service.create_payment(db, payment, current_user.id)
+        return await service.create_payment(db, payment, "system")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,8 +52,7 @@ async def list_payments(
     assignment_id: Optional[str] = None,
     guest_id: Optional[str] = None,
     method: Optional[PaymentMethod] = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     List payments with optional filters.
@@ -76,8 +79,7 @@ async def list_payments(
 @router.get("/{payment_id}", response_model=schemas.PaymentRead)
 async def get_payment(
     payment_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get a specific payment by ID.
@@ -90,8 +92,7 @@ async def get_payment(
 @router.delete("/{payment_id}")
 async def delete_payment(
     payment_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Delete a payment record.
@@ -106,8 +107,7 @@ async def delete_payment(
 @router.get("/assignment/{assignment_id}/summary")
 async def get_assignment_payment_summary(
     assignment_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get payment summary for a specific assignment.
@@ -125,8 +125,7 @@ async def get_assignment_payment_summary(
 @router.get("/daily-summary")
 async def get_daily_payment_summary(
     date: Optional[str] = None,  # Format: YYYY-MM-DD
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get daily payment summary.
@@ -143,8 +142,7 @@ async def get_daily_payment_summary(
 @router.post("/receipt")
 async def generate_payment_receipt(
     receipt_request: schemas.PaymentReceiptRequest,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Generate receipt data for a payment.
@@ -166,8 +164,7 @@ async def generate_payment_receipt(
 @router.get("/ledger/assignment/{assignment_id}", response_model=List[schemas.GuestLedgerRead])
 async def get_assignment_ledger(
     assignment_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get full ledger for a specific assignment with running balance.
@@ -207,8 +204,7 @@ async def get_assignment_ledger(
 @router.get("/ledger/guest/{guest_id}", response_model=List[schemas.GuestLedgerRead])
 async def get_guest_ledger(
     guest_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get all ledger entries for a specific guest with running balance.
@@ -249,8 +245,7 @@ async def get_guest_ledger(
 async def get_payment_method_stats(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get statistics on payment method usage.
@@ -280,8 +275,7 @@ async def get_payment_method_stats(
 @router.get("/{payment_id}/receipt-pdf")
 async def get_payment_receipt_pdf(
     payment_id: str,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.RECEPTIONIST, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Generate and download PDF receipt for a payment.

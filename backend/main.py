@@ -11,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from backend.auth.router import router as auth_router
 from backend.modules.rooms.router import router as rooms_router
 from backend.modules.guests.router import router as guests_router
 from backend.modules.payments.router import router as payments_router
@@ -25,7 +24,6 @@ from backend.modules.audit.router import router as audit_router
 from backend.modules.reports.router import router as reports_router
 from backend.modules.backup.router import router as backup_router
 from backend.modules.settings.router import router as settings_router
-from backend.auth.models import User, UserRole
 from backend.modules.rooms.models import Room, RoomAssignment
 from backend.modules.guests.models import Guest
 from backend.modules.payments.models import GuestLedger, Payment
@@ -37,31 +35,13 @@ from backend.modules.payroll.models import PayrollRecord, SalaryAdvance
 from backend.modules.audit.models import AuditLog
 from backend.modules.backup.models import Backup
 from backend.modules.settings.models import AppSetting
-from backend.auth.service import get_password_hash
-from backend.database import engine, Base, async_session
-from sqlalchemy import select
+from backend.database import engine, Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
-    # Seed initial super admin if no users exist
-    async with async_session() as session:
-        result = await session.execute(select(User))
-        user_exists = result.first()
-        if not user_exists:
-            admin_user = User(
-                username="admin",
-                password_hash=get_password_hash("password"),
-                full_name="System Administrator",
-                role=UserRole.SUPER_ADMIN
-            )
-            session.add(admin_user)
-            await session.commit()
-            print("INFO: Initial super_admin user created: admin / password")
-            
     yield
 
 app = FastAPI(title="Amirable Hotel Management API", lifespan=lifespan)
@@ -76,7 +56,6 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth_router, prefix="/api/v1")
 app.include_router(rooms_router, prefix="/api/v1")
 app.include_router(guests_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")

@@ -5,12 +5,10 @@
  * License: Proprietary
  */
 
-import { Moon, Sun, User } from 'lucide-react';
-import { useAuthStore } from '../../store/auth';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export const Topbar = () => {
-  const { user } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -27,15 +25,6 @@ export const Topbar = () => {
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <div className="text-right">
-          <p className="text-sm font-medium text-text-primary">{user?.full_name}</p>
-          <span className="text-[10px] bg-bg-elevated text-accent-primary px-2 py-0.5 rounded border border-border uppercase font-bold tracking-wider">
-            {user?.role.replace('_', ' ')}
-          </span>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-text-muted">
-          <User size={20} />
-        </div>
       </div>
     </header>
   );

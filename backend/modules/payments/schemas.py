@@ -10,6 +10,12 @@ from datetime import datetime
 from typing import Optional
 from .models import PaymentMethod
 
+class AdditionalChargeCreate(BaseModel):
+    assignment_id: str
+    guest_id: str
+    description: str
+    amount: float
+
 class PaymentBase(BaseModel):
     method: PaymentMethod
     amount: float

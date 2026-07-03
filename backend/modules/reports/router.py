@@ -10,8 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from datetime import datetime, date
 from backend.database import get_db
-from backend.auth.dependencies import require_role
-from backend.auth.models import UserRole
 from backend.modules.rooms.models import Room, RoomAssignment, RoomStatus
 from backend.modules.payments.models import GuestLedger, LedgerEntryType
 
@@ -20,8 +18,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 @router.get("/daily")
 async def get_daily_report(
     report_date: str = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     if not report_date:
         report_date = date.today().isoformat()
@@ -76,8 +73,7 @@ async def get_daily_report(
 @router.get("/monthly")
 async def get_monthly_report(
     month: str = None,
-    db: AsyncSession = Depends(get_db),
-    _ = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT]))
+    db: AsyncSession = Depends(get_db)
 ):
     if not month:
         month = date.today().isoformat()[:7]

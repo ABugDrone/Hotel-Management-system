@@ -39,10 +39,12 @@ async def delete_food_item(db: AsyncSession, item_id: str):
     await db.commit()
     return True
 
-async def get_all_orders(db: AsyncSession, status: Optional[OrderStatus] = None):
+async def get_all_orders(db: AsyncSession, status: Optional[OrderStatus] = None, assignment_id: Optional[str] = None):
     query = select(FoodOrder).order_by(FoodOrder.created_at.desc())
     if status:
         query = query.where(FoodOrder.status == status)
+    if assignment_id:
+        query = query.where(FoodOrder.assignment_id == assignment_id)
     result = await db.execute(query)
     return result.scalars().all()
 

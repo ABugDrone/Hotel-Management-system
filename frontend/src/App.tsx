@@ -10,10 +10,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { loadConfig, AppConfig } from './config';
 import { initApiClient } from './api/client';
-import { LoginPage } from './pages/Login/LoginPage';
 import { Dashboard } from './pages/Dashboard/Dashboard';
 import { RoomsPage } from './pages/Rooms/RoomsPage';
+import { CheckoutPage } from './pages/Rooms/CheckoutPage';
 import { GuestsPage } from './pages/Guests/GuestsPage';
+import { GuestBillPage } from './pages/Guests/GuestBillPage';
 import { PaymentsPage } from './pages/Payments/PaymentsPage';
 import DebtsPage from './pages/Debts/DebtsPage';
 import RestaurantPage from './pages/Restaurant/RestaurantPage';
@@ -26,7 +27,6 @@ import AuditPage from './pages/Audit/AuditPage';
 import BackupPage from './pages/Backup/BackupPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import { MainLayout } from './components/layout/MainLayout';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
 
 const queryClient = new QueryClient();
@@ -54,16 +54,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          
-          <Route element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }>
+          <Route element={<MainLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/rooms/checkout" element={<CheckoutPage />} />
             <Route path="/guests" element={<GuestsPage />} />
+            <Route path="/guests/:guestId/bills" element={<GuestBillPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/restaurant" element={<RestaurantPage />} />

@@ -32,12 +32,24 @@ echo [3/4] Preparing production files...
 copy /Y frontend\config.prod.json frontend\dist\config.json > nul
 echo Done.
 
-REM --- Step 4: Build .exe with PyInstaller ---
+REM --- Step 4: Build both .exe files ---
 echo.
-echo [4/4] Packaging into executable (this may take a while)...
+echo [4/4] Packaging into executables...
+
+REM --- 4a. Desktop WebView2 build ---
+echo Building desktop build (webview2) ...
 "%USERPROFILE%\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe" --clean build.spec
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: PyInstaller build failed!
+    echo ERROR: Desktop PyInstaller build failed!
+    pause
+    exit /b 1
+)
+
+REM --- 4b. Win7 server-only build ---
+echo Building Win7 build (server-only)...
+& "%USERPROFILE%\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe" --clean build_win7.spec
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Win7 PyInstaller build failed!
     pause
     exit /b 1
 )
@@ -47,10 +59,9 @@ echo ======================================================
 echo   Build Complete!
 echo ======================================================
 echo.
-echo Output: dist\AmirableHM\AmirableHM.exe
-echo.
-echo To run the app:
+echo Outputs:
 echo   dist\AmirableHM\AmirableHM.exe
+echo   dist\AmirableHM_Win7.exe
 echo.
 echo Access the app at: http://localhost:8000
 echo.

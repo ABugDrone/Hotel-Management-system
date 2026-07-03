@@ -1,16 +1,10 @@
-/**
- * Developer: DroneBug Technologies
- * GitHub: https://github.com/ABugDrone
- * App: Amirable Hotel Management System
- * License: Proprietary
- */
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, User, Phone, Mail, MapPin, Loader2, X, AlertCircle } from 'lucide-react';
+import { Plus, Search, User, Phone, Mail, MapPin, Loader2, X, AlertCircle, Eye } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import { Guest } from '../../types';
 
@@ -27,8 +21,10 @@ type GuestFormValues = z.infer<typeof guestSchema>;
 
 export const GuestsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: guests, isLoading } = useQuery<Guest[]>({
     queryKey: ['guests', searchTerm],
@@ -52,9 +48,34 @@ export const GuestsPage = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: GuestFormValues }) => {
+      return client.patch(`/api/v1/guests/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      handleCloseModal();
+    },
+  });
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setEditingGuest(null);
     reset();
+  };
+
+  const openEditModal = (guest: Guest) => {
+    setEditingGuest(guest);
+    reset(guest);
+    setIsModalOpen(true);
+  };
+
+  const onSubmit = (data: GuestFormValues) => {
+    if (editingGuest) {
+      updateMutation.mutate({ id: editingGuest.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   return (
@@ -95,24 +116,25 @@ export const GuestsPage = () => {
                 <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider">Phone Number</th>
                 <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider">ID Details</th>
                 <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider">Registered</th>
+                <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
+                  <td colSpan={5} className="px-6 py-12 text-center">
                     <Loader2 size={32} className="animate-spin mx-auto text-accent-primary" />
                   </td>
                 </tr>
               ) : guests?.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-text-muted">
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                     No guests found.
                   </td>
                 </tr>
               ) : (
                 guests?.map((guest) => (
-                  <tr key={guest.id} className="hover:bg-bg-elevated transition-colors cursor-pointer group">
+                  <tr key={guest.id} className="hover:bg-bg-elevated transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-text-muted group-hover:text-accent-primary">
@@ -139,6 +161,27 @@ export const GuestsPage = () => {
                     <td className="px-6 py-4 text-text-muted text-sm">
                       {new Date(guest.created_at).toLocaleDateString()}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => navigate(`/guests/${guest.id}/bills`)}
+                          className="p-2 text-text-muted hover:text-accent-primary transition-colors"
+                          title="View Bills"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button 
+                          onClick={() => openEditModal(guest)}
+                          className="p-2 text-text-muted hover:text-accent-primary transition-colors"
+                          title="Edit Guest"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -147,7 +190,7 @@ export const GuestsPage = () => {
         </div>
       </div>
 
-      {/* Registration Modal */}
+      {/* Registration / Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
           <div className="card-surface w-full max-w-xl shadow-2xl relative animate-in fade-in zoom-in duration-200">
@@ -159,11 +202,11 @@ export const GuestsPage = () => {
             </button>
             
             <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <Plus className="text-accent-primary" />
-              Register New Guest
+              <User className="text-accent-primary" />
+              {editingGuest ? `Edit ${editingGuest.full_name}` : 'Register New Guest'}
             </h3>
 
-            <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-text-muted mb-1.5">Full Name</label>
@@ -213,10 +256,10 @@ export const GuestsPage = () => {
                 </div>
               </div>
 
-              {createMutation.isError && (
+              {(createMutation.isError || updateMutation.isError) && (
                 <div className="p-3 bg-status-red bg-opacity-10 border border-status-red border-opacity-20 rounded flex items-start gap-3 text-status-red text-sm">
                   <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  <p>{(createMutation.error as any).response?.data?.detail || 'An error occurred'}</p>
+                  <p>An error occurred</p>
                 </div>
               )}
 
@@ -224,8 +267,14 @@ export const GuestsPage = () => {
                 <button type="button" onClick={handleCloseModal} className="px-6 py-2 rounded font-medium text-text-muted hover:bg-bg-elevated transition-colors">
                   Cancel
                 </button>
-                <button type="submit" disabled={createMutation.isPending} className="btn-primary px-8">
-                  {createMutation.isPending ? <Loader2 size={20} className="animate-spin" /> : 'Register Guest'}
+                <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary px-8">
+                  {(createMutation.isPending || updateMutation.isPending) ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : editingGuest ? (
+                    'Save Changes'
+                  ) : (
+                    'Register Guest'
+                  )}
                 </button>
               </div>
             </form>
